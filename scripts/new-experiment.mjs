@@ -18,16 +18,18 @@ async function exists(p) {
   try { await access(p, constants.F_OK); return true; } catch { return false; }
 }
 
-async function copyApp(source, destination) {
-  await cp(source, destination, {
-    recursive: true,
-    filter(src) {
-      const rel = path.relative(onboarding, src);
-      if (!rel) return true;
-      const first = rel.split(path.sep)[0];
-      return !["baseline", "runs", "node_modules", "dist"].includes(first);
-    },
-  });
+async function copyFixture(destination) {
+  await mkdir(destination, { recursive: true });
+  const entries = await readdir(onboarding, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (["baseline", "runs", "node_modules", "dist"].includes(entry.name)) continue;
+    await cp(
+      path.join(onboarding, entry.name),
+      path.join(destination, entry.name),
+      { recursive: true },
+    );
+  }
 }
 
 if (!(await exists(path.join(onboarding, "package.json")))) {
@@ -36,9 +38,10 @@ if (!(await exists(path.join(onboarding, "package.json")))) {
 }
 
 // Snapshot the original fixture once. After this exists it is never overwritten.
-if (!(await exists(baseline))) {
-  await mkdir(baseline, { recursive: true });
-  await copyApp(onboarding, baseline);
+// A failed previous attempt may have left an empty baseline directory, so require
+// package.json before considering the snapshot valid.
+if (!(await exists(path.join(baseline, "package.json")))) {
+  await copyFixture(baseline);
   await writeFile(path.join(baseline, "BASELINE.md"), "# Frozen baseline\n\nThis directory is the immutable Northstar onboarding fixture. Experiment agents must never edit it.\n");
   console.log("Created frozen baseline snapshot.");
 }
