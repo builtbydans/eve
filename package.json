@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build:eve": "eve build",
     "dev:eve": "eve dev",
-    "start:eve": "eve start"
+    "start:eve": "eve start",
+    "experiment:new": "node scripts/new-experiment.mjs"
   },
   "dependencies": {
     "@radix-ui/react-use-controllable-state": "^1.2.2",
